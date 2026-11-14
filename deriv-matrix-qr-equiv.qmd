@@ -1,0 +1,453 @@
+---
+title: "Аналитическое и матричные решения. Эквивалентность"
+---
+
+```{r}
+# Installing package into 'C:/Users/angelgardt/AppData/Local/R/win-library/4.6'
+
+library(tidyverse)
+```
+
+<!--
+Алиасы для обозначений
+-->
+\newcommand{\vepsilon}{\varepsilon}
+\newcommand{\v}{\mathbf} <!-- vectors & matrices -->
+\newcommand{\T}{\msc{T}} <!-- transpose -->
+\newcommand{\row}[1]{\mathrm{row}_{#1}}
+
+## Простая линейная регрессия
+
+- Модель генерации данных
+
+$$
+y_i = \beta_0 + \beta_1 x_i + \vepsilon_i
+$$
+
+- Закономерность в данных
+  - $b_0 = \hat \beta_0$, $b_1 = \hat \beta_1$
+
+$$
+y_i = b_0 + b_1 x_i + e_i
+$$
+
+- Пытаемся оценить
+
+$$
+\hat y_i = b_0 + b_1 x_i
+$$
+
+Оценивать будем через мнимизацию ошибки модели. Определим ошибку модели как $\displaystyle \sum_{i=1}^n e_i^2$, при этом $e_i = y_i - \hat y_i$. Тогда определим функцию ошибки как
+
+$$
+S(b_0, b_1) = \sum_{i=1}^n e_i^2 = \sum_{i=1}^n (y_i - \hat y_i)^2 = \sum_{i=1}^n (y_i - b_0 - b_1 x_i)^2 \longrightarrow \min_{b_0, b_1}
+$$
+
+### Аналитическое решение
+
+Задачу можно решить через частные производные. Функция ошибки есть положительно определённая квадратичная форма --- график $S$ --- элиптический параболоид с ветвями вверх. У этой функции есть единственный минимум.
+
+
+Для нахождения минимума функции ошибки приравниваем частные произодные по каждому параметру модели к нулю.
+
+$$
+\begin{split}
+& \dfrac{\partial S}{\partial b_0} = -2 \sum_{i=1}^n (y_i - b_0 - b_1 x_i) = 0 \\
+& \sum_{i=1}^n (y_i - b_0 - b_1 x_i) = 0 \\
+& \sum_{i=1}^n y_i - \sum_{i=1}^n b_0 - \sum_{i=1}^n b_1 x_i = 0 \\
+& \sum_{i=1}^n y_i - n b_0 - b_1 \sum_{i=1}^n x_i = 0 \\
+& n b_0 + b_1 \sum_{i=1}^n x_i = \sum_{i=1}^n y_i
+\end{split}
+$$
+
+$$
+\begin{split}
+& \dfrac{\partial S}{\partial b_1} = -2 \sum_{i=1}^n x_i (y_i - b_0 - b_1 x_i) = 0 \\
+& \sum_{i=1}^n x_i (y_i - b_0 - b_1 x_i) = 0 \\
+& \sum_{i=1}^n x_i y _i - b_0 \sum_{i=1}^n x_i - b_1 \sum_{i=1}^n x_i^2 = 0 \\
+& b_0 \sum_{i=1}^n x_i + b_1 \sum_{i=1}^n x_i^2 = \sum_{i=1}^n x_i y_i
+\end{split}
+$$
+
+Имеем систему:
+
+$$
+\begin{cases}
+n b_0 + b_1 \sum_{i=1}^n x_i = \sum_{i=1}^n y_i \\
+b_0 \sum_{i=1}^n x_i + b_1 \sum_{i=1}^n x_i^2 = \sum_{i=1}^n x_i y_i
+\end{cases}
+$$
+
+Выразим из первого уравнения $b_0$:
+
+$$
+\begin{split}
+nb_0 &= \sum_{i=1}^n y_i - b_1 \sum_{i=1}^n x_i \\
+b_0 &= \dfrac{1}{n} \sum_{i=1}^n y_i - b_1 \dfrac{1}{n} \sum_{i=1}^n x_i \\
+b_0 &= \overline y - b_1 \overline x
+\end{split}
+$$
+
+Подставим во второе:
+
+$$
+\begin{split}
+& (\overline y - b_1 \overline x) \sum_{i=1}^n x_i + b_1 \sum_{i=1}^n x_i^2 = \sum_{i=1}^n x_i y_i \\
+& \overline y \sum_{i=1}^n x_i - b_1 \overline x \sum_{i=1}^n x_i + b_1 \sum_{i=1}^n x_i^2 = \sum_{i=1}^n x_i y_i \\
+& b_1 \left( \sum_{i=1}^n x_i^2 - \overline x \sum_{i=1}^n x_i \right) = \sum_{i=1}^n x_i y_i - \overline y \sum_{i=1}^n x_i \\
+& b_1 = \dfrac{\sum_{i=1}^n x_i y_i - \overline y \sum_{i=1}^n x_i}{\sum_{i=1}^n x_i^2 - \overline x \sum_{i=1}^n x_i} \quad \cdot \dfrac{n}{n} \\ 
+& b_1 = \dfrac{
+  \frac{1}{n}\sum_{i=1}^n x_i y_i - \overline y \cdot \frac{1}{n} \sum_{i=1}^n x_i
+}{
+  \frac{1}{n} \sum_{i=1}^n x_i^2 - \overline x \cdot \frac{1}{n} \sum_{i=1}^n x_i
+} \\
+& b_1 = \frac{ \overline{xy} - \overline x \cdot \overline y}{\overline{x^2} - \overline x^2}
+\end{split}
+$$
+
+Получили аналитическое решение задачи линейной регрессии.
+
+
+#### Ручные вычиления на примере
+
+Возьмем для примера такие данные:
+
+```{r}
+#| echo: false
+
+
+data.frame(
+  i = 1:3,
+  x = 1:3,
+  y = c(2, 3,5)
+) |> knitr::kable()
+```
+
+Посчитаем всё необходимое для вычисления коэффицинетов:
+
+$$
+\begin{split}
+& \overline x = \frac{1+2+3}{3} = \frac{6}{3} = 2 \\
+& \overline y = \frac{2+3+5}{3} = \frac{10}{3} \\
+& \overline x ^2 = 2^2 = 4 \\
+& \overline{x^2} = \frac{1^2 + 2^2 + 3^2}{3} = \frac{1+4+9}{3} = \frac{14}{3} \\
+& \overline x \cdot \overline y = 2 \cdot \frac{10}{3} = \frac{20}{3} \\
+& \overline{xy} = \frac{1 \cdot 2 + 2 \cdot 3 + 3 \cdot 5}{3} = \frac{2 + 6 + 15}{3} = \frac{23}{3}
+\end{split}
+$$
+
+Рассчитаем оценки коэффициентов:
+
+$$
+\begin{split}
+b_1 &= \frac{\frac{23}{2} - \frac{20}{3}}{\frac{14}{3} - 4} = \frac{1}{\frac{14}{3} - \frac{12}{3}} = \frac{1}{\frac{2}{3}} = \frac{3}{2} = 1.5 \\
+b_0 &= \frac{10}{3} - \frac{3}{2} \cdot \frac{6}{3} = \frac{10}{3} - 3 = \frac{10}{3} - \frac{9}{3} = \frac{1}{3}\\
+\end{split}
+$$
+
+Итого, имеем итоговое уравнение:
+
+$$
+\hat y_i = \frac{1}{3} + \frac{3}{2} x_i
+$$
+
+
+### Матричное вычисление через нормальные уравнения
+
+Зададим оцениваемую модель как систему уравнений:
+
+$$
+\begin{cases}
+y_1 &= b_0 + b_1 x_1 + e_1 \\ 
+y_2 &= b_0 + b_1 x_2 + e_2 \\ 
+& \ldots \\
+y_n &= b_0 + b_1 x_n + e_n
+\end{cases}
+$$
+
+Перепишем систему в матричном виде:
+
+$$
+\v y = \v X \v b + \v e
+$$
+
+где 
+$\v y = \pmatrix{y_1 \\ y_2 \\ \vdots \\ y_n}$, 
+$\v X = \pmatrix{1 & x_1 \\ 1 & x_2 \\ \vdots & \vdots \\ 1 & x_n}$,
+$\v b = \pmatrix{b_0 \\ b_1}$,
+$\v e = \pmatrix{e_1 \\ e_2 \\ \vdots \\ e_n}$
+
+Так как $\v e^\T \v e = \sum_i e_i^2$, а $\v e = \v y - \v X \v b$, то можно записать функцию ошибки следующим образом:
+
+$$
+S(\v b) = \v e^\T \v e = (\v y - \v X \v b)^\T (\v y - \v X \v b)
+$$
+
+Преобразуем функцию ошибки:
+
+$$
+\begin{split}
+S(\v b) &= ( \v y - \v X \v b )^\T ( \v y - \v X \v b ) = \\
+&= ( \v y^\T - \v b^\T \v X^\T ) ( \v y - \v X \v b ) = \\
+&= \v y ^\T \v y - \v y ^\T \v X \v b - \v b ^\T \v X ^\T \v y + \v b ^\T \v X ^\T \v X \v b = \\
+&= \v y ^\T \v y - 2 \v b ^\T \v X ^\T \v y + \v b ^\T \v X ^\T \v X \v b
+\end{split}
+$$
+
+Последнее преобразование возможно, так как $(\v y ^\T \v X \v b)^\T = \v b ^\T \v X ^\T \v y$, а $\v y ^\T \v X \v b$ и $\v b ^\T \v X ^\T \v y$ --- скаляры, что можно проверить по размерности результата в обоих случаях.
+
+Дифференцируем функцию ошибки и приравниваем её к нулю (детали --- см. матричное дифференцирование и дифференцирование квадратичных форм):
+
+$$
+\frac{\partial S}{\partial \v b} = -2 \v X^\T \v y + 2 \v X^\T \v X \v b = 0
+$$
+
+Вычисляем:
+
+- **нормальное уравнение МНК**
+
+$$
+\v X^\T \v X \v b = \v X^\T \v y
+$$
+
+- если матрица $\v X^\T \v X$ обратима, то
+
+$$
+\underbrace{(\v X^\T \v X)^{-1} \v X^\T \v X}_{= \v I} \v b = (\v X^\T \v X)^{-1} \v X^\T \v y
+$$
+
+$$
+\v b = (\v X^\T \v X)^{-1} \v X^\T \v y
+$$
+
+Получили решение задачи линейной регрессии в матричном виде.
+
+
+#### Ручные вычиления на примере
+
+На основе данных, имеющихся выше, запишем элементы нормальных уравнений МНК:
+
+- $\v X = \pmatrix{1 & 1 \\ 1 & 2 \\ 1 & 3}$
+- $\v X^\T = \pmatrix{1 & 1 & 1 \\ 1 & 2 & 3}$
+- $\v y = \pmatrix{2 \\ 3 \\ 5}$
+
+Найдём объекты, неободимые для решения:
+
+$$
+\begin{split}
+\v X^\T \v X &= \pmatrix{1 & 1 & 1 \\ 1 & 2 & 3} \pmatrix{1 & 1 \\ 1 & 2 \\ 1 & 3} = \\
+&= \pmatrix{
+(1 \cdot 1 + 1 \cdot 1 + 1 \cdot 1) & (1 \cdot 1 + 1 \cdot 2 + 1 \cdot 3) \\
+(1 \cdot 1 + 2 \cdot 1 + 3 \cdot 1) & (1 \cdot 1 + 2 \cdot 2 + 3 \cdot 3)
+} = \\
+&= \pmatrix{3 & 6 \\ 6 & 14}
+\end{split}
+$$
+
+$$
+\begin{split}
+\v X^\T \ y &= \pmatrix{1 & 1 & 1 \\ 1 & 2 & 3} \pmatrix{2 \\ 3 \\ 5} = \\
+&= \pmatrix{
+(1 \cdot 2 + 1 \cdot 3 + 1 \cdot 5) \\ 
+(1 \cdot 2 + 2 \cdot 3 + 3 \cdot 5)
+} = \pmatrix{10 \\ 23}
+\end{split}
+$$
+
+Кроме этого, нужна ещё обратная матрица --- $(\v X^\T \v X)^{-1}$. Для этого, во-первых, необходимо выяснить, обратима ли матрица $\v X^\T \v X$, а во-вторых, выбрать метод, которым будет вычисляться обратная матрица.
+
+1. Вычислим детерминант: $| \v X^\T \v X | = \left| \matrix{3 & 6 \\ 6 & 14} \right| = 3 \cdot 14 - 6 \cdot 6 = 42 - 36 = 6 \neq 0$. Следовательно, матрица обратима.
+2. Найдём обратную матрицу методом Гаусса--Жордана:
+
+$$
+\begin{split}
+\left(
+\begin{array}{cc|cc}
+3 & 6 & 1 & 0 \\
+6 & 14 & 0 & 1
+\end{array}
+\right)
+\xrightarrow{\row{1}:3}
+\left(
+\begin{array}{cc|cc}
+1 & 2 & \dfrac{1}{3} & 0 \\
+6 & 14 & 0 & 1
+\end{array}
+\right)
+\xrightarrow{\row{2} - 6\row{1}}
+\left(
+\begin{array}{cc|cc}
+1 & 2 & \dfrac{1}{3} & 0 \\
+0 & 2 & -2 & 1
+\end{array}
+\right)
+\xrightarrow{\row{2}:2}
+\left(
+\begin{array}{cc|cc}
+1 & 2 & \dfrac{1}{3} & 0 \\
+0 & 1 & -1 & \dfrac{1}{2}
+\end{array}
+\right)
+\xrightarrow{\row{1} - 2\row{1}}
+\left(
+\begin{array}{cc|cc}
+1 & 0 & \dfrac{7}{3} & -1 \\
+0 & 1 & -1 & \dfrac{1}{2}
+\end{array}
+\right)
+\end{split}
+$$
+
+$$
+(\v X^\T \v X)^{-1} = \pmatrix{
+\dfrac{7}{3} & -1 \\
+-1 & \dfrac{1}{2}
+}
+$$
+
+Вычисляем вектор коэффициентов:
+
+$$
+\v b = \pmatrix{
+\dfrac{7}{3} & -1 \\
+-1 & \dfrac{1}{2}
+}
+\pmatrix{10 \\ 23} = 
+\pmatrix{
+\dfrac{7}{3} \cdot 10 - 1 \cdot 23 \\
+-1 \cdot 10 + \dfrac{1}{2} \cdot 23
+} = 
+\pmatrix{
+\dfrac{70}{3} - \dfrac{69}{3} \\
+\dfrac{23}{2} - 10
+} = 
+\pmatrix{
+\dfrac{1}{3} \\
+\dfrac{2}{3}
+}
+$$
+
+Значит, $b_0 = \dfrac{1}{2}$, $b_1 = \dfrac{2}{3}$.
+
+
+### Эквивалентность нормальных уравнений МНК и уравнений аналитического решения в общем виде
+
+Распишем нормальные уравнения МНК в явном виде:
+
+$$
+\v y = \pmatrix{y_1 \\ y_2 \\ \vdots \\ y_n} \quad
+\v X = \pmatrix{1 & x_1 \\ 1 & x_2 \\ \vdots & \vdots \\ 1 & x_n} \quad
+\v b = \pmatrix{b_0 \\ b_1}
+$$
+
+$$
+\v X^\T \v X = 
+\pmatrix{
+\sum_i 1 \cdot 1 & \sum_i x_i \cdot 1 \\
+\sum_i 1 \cdot x_i & \sum_i x_i^2
+} = 
+\pmatrix{
+n & \sum_i x_i \\
+\sum_i x_i & \sum_i x_i^2
+}
+$$
+
+
+$$
+\v X^\T \v X \v b = \v X^\T \v y
+$$
+
+$$
+\pmatrix{
+n & \sum_i x_i \\ 
+\sum_i x_i & \sum_i x_i^2
+}
+\pmatrix{
+b_0 \\ b_1
+} = 
+\pmatrix{
+\sum_i y_i \\ \sum_i x_i y _i
+}
+$$
+
+$$
+\cases{
+n b_0 + b_1 \sum_i x_i = \sum_i y_i \\
+b_0 \sum_i x_i + b_1 \sum_i x_i^2 = \sum_i x_i y_i
+}
+$$
+
+Получили то же самое, что и в аналитическом решении.
+
+
+
+## Нормальные уравнения МНК и QR-разложение
+
+На практике коэффициенты модели подбираются через QR-разложение матрицы предикторов $\v X$. Решение нормальных уравнение оказывается численно нестабильным.
+
+Согласно соответствующей теореме, для любой матрицы с линейно независимыми столбцами существует так называемое QR-разложение. В частности, для матрицы $\v X$ (тонкое разложение):
+
+$$
+\v X = \v Q \v R, \quad \v Q_{n \times p}, \quad \v Q^\T \v Q = \v I, 
+\quad \v R_{p \times p} = 
+\pmatrix{r_{11} & r_{12} & \ldots & r_1p \\ 
+0 & r_{22} & \ldots & r_2p \\ 
+\vdots & \vdots & \ddots & \vdots \\ 
+0 & 0 & \ldots & r_pp}
+$$
+
+Подставим разложение в нормальные уравленения МНК:
+
+$$
+\begin{split}
+\v X^\T \v X \v b &= \v X^\T \v y \\
+(\v Q \v R)^\T (\v Q \v R) \v b &= (\v Q \v R)^\T \v y \\
+\v R ^\T \v Q^\T \v Q \v R \v b &= \v R ^\T \v Q^\T \v y \\
+\v R ^\T \v I \v R \v b &= \v R ^\T \v Q^\T \v y \\
+\v R ^\T \v R \v b &= \v R ^\T \v Q^\T \v y
+\end{split}
+$$
+
+Матрица $\v R$ обратима при полном столбцовом ранге $\v X$. Тогда
+
+$$
+\begin{split}
+(\v R^\T)^{-1} \v R ^\T \v R \v b &= (\v R^\T)^-1 \v R ^\T \v Q^\T \v y \\
+\v R \v b &= \v Q^\T \v y
+\end{split}
+$$
+
+Решаю систему, получаем оценки коэффициентов.
+
+
+
+### Вычислим вручную в R
+
+```{r}
+ds <- data.frame(
+  i = 1:3,
+  x = 1:3,
+  y = c(2, 3,5)
+)
+
+ds |> 
+  select(x) |> 
+  add_column(x0 = 1, .before = "x") |> 
+  as.matrix() -> X
+X
+```
+
+```{r}
+ds |> 
+  select(y) |> 
+  as.matrix() -> y
+y
+```
+
+```{r}
+t(X) %*% X
+```
+
+
+
+

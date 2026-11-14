@@ -1,0 +1,42 @@
+project:
+  type: website
+  output-dir: docs
+  preview: 
+    port: 6464
+
+website:
+  title: "Drafts | WoLM SDARP"
+  navbar:
+    left:
+      - href: index.qmd
+        text: Home
+  sidebar:
+    style: docked
+    contents: 
+      - section: "Математика"
+      - section: "Линейная регрессия"
+        contents: 
+        - deriv-matrix-qr-equiv.qmd
+
+format:
+  html:
+    toc-depth: 4
+    include-in-header:
+      text: |
+        <script>
+        window.MathJax = {
+          tex: {
+            macros: {
+              msc: ["\\style{font-variant: small-caps;}{\\text{#1}}", 1]
+            }
+          }
+        };
+        </script>
+    theme:
+      - cosmo
+      - brand
+    css: styles.css
+    toc: true
+
+
+
