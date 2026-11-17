@@ -1,0 +1,88 @@
+---
+title: "Корреляция"
+---
+
+\newcommand{\cor}{\text{cor}}
+
+## Распределение оценок коэффициента корреляции Пирсона
+
+$$
+\cor(X,Y) = \dfrac{
+\sum_{i=1}^n (x_i - \overline x)(y_i - \overline y)
+}{
+\sqrt{\sum_{i=1}^n (x_i - \overline x)}
+\cdot
+\sqrt{\sum_{i=1}^n (y_i - \overline y)}
+}
+$$
+
+
+```{r}
+library(tidyverse)
+library(scico)
+theme_set(theme_bw())
+
+set.seed(2026)
+
+rhos <- seq(-.9, .9, by = 0.1)
+n_reps <- 1000
+n_obs <- 50
+
+ds <- crossing(rho = rhos, rep = 1:n_reps, obs = 1:n_obs) %>%
+  mutate(
+    X = rnorm(n()),
+    Z = rnorm(n()),
+    Y = rho * X + sqrt(1 - rho^2) * Z
+  ) %>%
+  group_by(rho, rep) %>%
+  summarise(
+    sample_cor = cor(X, Y),
+    .groups = "drop"
+  ) %>%
+  mutate(
+    sample_cor_transformed = atanh(sample_cor),
+    rho_text = factor(rho, ordered = TRUE)
+    ) %>% 
+  pivot_longer(cols = c(sample_cor, sample_cor_transformed))
+```
+
+```{r}
+#| fig-height: 10
+#| fig-width: 16
+
+ds %>% 
+  ggplot(aes(x = value, 
+             color = rho_text, 
+             group = rho_text)) +
+  geom_density(linewidth = 0.5, 
+               alpha = 1) +
+  facet_wrap(~ name, ncol = 1, scales = "free",
+             labeller = labeller(
+               name = c("sample_cor" = "«Сырой» коэффициент корреляции",
+                        "sample_cor_transformed" = "Преобразование Фишера")
+             )) +
+  scale_color_manual(values = scico(19, palette = "roma")) +
+  guides(color = guide_legend(nrow=2, position = "bottom")) +
+  labs(
+    title = "Выборочное распределение коэффициента корреляции Пирсона",
+    subtitle = sprintf("N = %s, Количество симуляций = %s", n_obs, n_reps),
+    x = "Выборочная корреляция (r)",
+    y = "Плотность",
+    color = "Истинное ρ"
+  ) +
+  theme(
+    legend.position = "right",
+    panel.grid.minor = element_blank(),
+    plot.title = element_text(face = "bold", size = 14),
+    plot.subtitle = element_text(color = "grey40", size = 11)
+  )
+```
+
+
+
+
+
+
+
+
+

@@ -14,12 +14,14 @@ website:
     style: docked
     contents: 
       - section: "Математика"
-      - section: "Линейная регрессия"
+      - section: "Линейные модели"
         contents: 
-        - deriv-matrix-qr-equiv.qmd
+        - pages/correlation.qmd
+        - pages/deriv-matrix-qr-equiv.qmd
 
 format:
   html:
+    lightbox: true
     toc-depth: 4
     include-in-header:
       text: |
@@ -33,8 +35,10 @@ format:
         };
         </script>
     theme:
-      - cosmo
-      - brand
+      light:
+        - flatly
+      dark:
+        - darkly
     css: styles.css
     toc: true
 
