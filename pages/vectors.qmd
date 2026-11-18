@@ -1,0 +1,52 @@
+---
+title: "Векторы"
+---
+
+```{r}
+library(tidyverse)
+theme_set(theme_bw())
+theme_update(legend.position = "bottom")
+```
+
+```{r}
+tibble(
+  coord = c("s1", "s2"),
+  a1_orig = c(2, 3),
+  a2_orig = c(-.5, -.3),
+  a3_orig = c(1.5, 0),
+  a4_orig = c(0, -2)
+  ) %>% 
+  mutate(
+    a1_centered = scale(a1_orig, center = TRUE, scale = FALSE),
+    a2_centered = scale(a2_orig, center = TRUE, scale = FALSE),
+    a3_centered = scale(a3_orig, center = TRUE, scale = FALSE),
+    a4_centered = scale(a4_orig, center = TRUE, scale = FALSE),
+    a1_scaled = scale(a1_orig, center = FALSE, scale = TRUE),
+    a2_scaled = scale(a2_orig, center = FALSE, scale = TRUE),
+    a3_scaled = scale(a3_orig, center = FALSE, scale = TRUE),
+    a4_scaled = scale(a4_orig, center = FALSE, scale = TRUE),
+    a1_stand = scale(a1_orig, center = TRUE, scale = TRUE),
+    a2_stand = scale(a2_orig, center = TRUE, scale = TRUE),
+    a3_stand = scale(a3_orig, center = TRUE, scale = TRUE),
+    a4_stand = scale(a4_orig, center = TRUE, scale = TRUE)
+  ) %>% 
+  pivot_longer(cols = -coord) %>% 
+  pivot_wider(names_from = "coord", values_from = "value") %>% 
+  separate(name, into = c("vec", "transform"), sep = "_") %>% 
+  ggplot(aes(color = vec)) +
+  geom_point(aes(x = s1, y = s2)) +
+  geom_segment(aes(x = 0, y = 0, xend = s1, yend = s2),
+               arrow = arrow(length = unit(.1, "inches"))
+               ) + 
+  facet_wrap(~ transform, ncol = 2) +
+  geom_hline(yintercept = 0, color = "gray") +
+  geom_vline(xintercept = 0, color = "gray") +
+  scale_x_continuous(breaks = -3:3) + 
+  coord_fixed(
+    xlim = c(-3, 3),
+    ylim = c(-3, 3)
+  )
+```
+
+
+

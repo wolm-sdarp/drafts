@@ -13,7 +13,9 @@ website:
   sidebar:
     style: docked
     contents: 
-      - section: "Математика"
+      - section: "Линал"
+        contents: 
+        - pages/vectors.qmd
       - section: "Линейные модели"
         contents: 
         - pages/correlation.qmd
