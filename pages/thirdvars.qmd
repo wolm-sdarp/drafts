@@ -3,6 +3,7 @@ title: "Третьи переменные"
 ---
 
 ```{r}
+#| message: false
 library(visNetwork)
 library(tidyverse)
 ```
@@ -11,12 +12,12 @@ library(tidyverse)
 #| include: false
 
 clrs <- list(
-  iv1 = "salmon",
-  iv2 = "salmon",
+  iv = "salmon",
   dv = "royalblue",
   conf = "orange",
   med = "seagreen",
-  coll = "purple"
+  coll = "purple",
+  third = "gray"
 )
 ```
 
@@ -32,13 +33,16 @@ IV2 [iv2]
 DV [dv]
 MED [med]
 COLL [coll]
-CONF [conf]
+CONF1 [conf1]
+CONF2 [conf2]
 IV1 -> DV
 IV2 -> DV
 IV1 -> MED
 MED -> DV
-CONF -> IV1
-CONF -> DV
+CONF1 -> IV1
+CONF1 -> DV
+CONF2 -> MED
+CONF2 -> DV
 IV2 -> COLL
 DV -> COLL
 '
@@ -52,35 +56,44 @@ nodes <- tibble(raw = node_lines) %>%
   mutate(
     id = str_extract(raw, "^\\w+"),
     attrs = str_extract(raw, "\\[([^\\]]+)\\]"),
-    exposure = grepl("exposure", attrs),
-    outcome = grepl("outcome", attrs),
+    iv = grepl("iv", attrs),
+    dv = grepl("dv", attrs),
+    coll = grepl("coll", attrs),
+    conf = grepl("conf", attrs),
+    med = grepl("med", attrs),
     role = case_when(
-      exposure ~ "exposure",
-      outcome ~ "outcome",
-      TRUE ~ "third variable"
+      iv ~ "iv",
+      dv ~ "dv",
+      conf ~ "conf",
+      coll ~ "coll",
+      med ~ "med",
+      TRUE ~ "third"
     ),
     color = case_when(
-      exposure ~ clrs$exposure,
-      outcome ~ clrs$outcome,
+      iv ~ clrs$iv,
+      dv ~ clrs$dv,
+      conf ~ clrs$conf,
+      coll ~ clrs$coll,
+      med ~ clrs$med,
       TRUE ~ clrs$third
     ),
-    size = if_else(id %in% always_visible, 32, 20),
+    # size = if_else(id %in% always_visible, 32, 20),
     opacity = 1.0, # по умолчанию всё видимо
     label = id,
     title = paste0("<b>", id, "</b><br>Role: ", role)
   )
 
 ## круговая раскладка
-n <- nrow(nodes)
-angles <- seq(0, 2 * pi, length.out = n + 1)[1:n]
-radius <- 320
-nodes <- nodes %>%
-  mutate(
-    x = radius * cos(angles) + 450,
-    y = radius * sin(angles) + 400,
-    fixed = TRUE
-  ) %>%
-  select(id, label, x, y, color, size, opacity, title, fixed)
+# n <- nrow(nodes)
+# angles <- seq(0, 2 * pi, length.out = n + 1)[1:n]
+# radius <- 320
+# nodes <- nodes %>%
+#   mutate(
+#     x = radius * cos(angles) + 450,
+#     y = radius * sin(angles) + 400,
+#     fixed = TRUE
+#   ) %>%
+#   select(id, label, x, y, color, size, opacity, title, fixed)
 
 ## рёбра
 edge_lines <- str_extract_all(dag_code, "\\w+\\s*->\\s*\\w+")[[1]]
