@@ -1,0 +1,160 @@
+---
+title: "Третьи переменные"
+---
+
+```{r}
+library(visNetwork)
+library(tidyverse)
+```
+
+```{r colors}
+#| include: false
+
+clrs <- list(
+  iv1 = "salmon",
+  iv2 = "salmon",
+  dv = "royalblue",
+  conf = "orange",
+  med = "seagreen",
+  coll = "purple"
+)
+```
+
+```{r}
+#| code-fold: true
+#| code-summary: "Код простроения визуализации"
+#| label: fig-dag
+#| fig-cap: "Directed Acyclic Graph"
+
+dag_code <- '
+IV1 [iv1]
+IV2 [iv2]
+DV [dv]
+MED [med]
+COLL [coll]
+CONF [conf]
+IV1 -> DV
+IV2 -> DV
+IV1 -> MED
+MED -> DV
+CONF -> IV1
+CONF -> DV
+IV2 -> COLL
+DV -> COLL
+'
+
+# always_visible <- c("Antibiotics", "Asthma", "FEV1")
+
+## узлы
+node_lines <- str_extract_all(dag_code, "\\w+\\s*\\[[^\\]]+\\]")[[1]]
+
+nodes <- tibble(raw = node_lines) %>%
+  mutate(
+    id = str_extract(raw, "^\\w+"),
+    attrs = str_extract(raw, "\\[([^\\]]+)\\]"),
+    exposure = grepl("exposure", attrs),
+    outcome = grepl("outcome", attrs),
+    role = case_when(
+      exposure ~ "exposure",
+      outcome ~ "outcome",
+      TRUE ~ "third variable"
+    ),
+    color = case_when(
+      exposure ~ clrs$exposure,
+      outcome ~ clrs$outcome,
+      TRUE ~ clrs$third
+    ),
+    size = if_else(id %in% always_visible, 32, 20),
+    opacity = 1.0, # по умолчанию всё видимо
+    label = id,
+    title = paste0("<b>", id, "</b><br>Role: ", role)
+  )
+
+## круговая раскладка
+n <- nrow(nodes)
+angles <- seq(0, 2 * pi, length.out = n + 1)[1:n]
+radius <- 320
+nodes <- nodes %>%
+  mutate(
+    x = radius * cos(angles) + 450,
+    y = radius * sin(angles) + 400,
+    fixed = TRUE
+  ) %>%
+  select(id, label, x, y, color, size, opacity, title, fixed)
+
+## рёбра
+edge_lines <- str_extract_all(dag_code, "\\w+\\s*->\\s*\\w+")[[1]]
+
+edges <- tibble(raw = edge_lines) %>%
+  mutate(
+    from = str_extract(raw, "^\\w+"),
+    to = str_extract(raw, "\\w+$"),
+    arrows = "to",
+    opacity = 1.0
+  ) %>%
+  select(from, to, arrows, opacity)
+
+## визуализация
+visNetwork(nodes, edges, width = "100%", height = "800px") %>%
+  visNodes(
+    shape = "dot",
+    borderWidth = 2,
+    font = list(
+      size = 13,
+      face = "sans",
+      color = "#222222",
+      align = "center",
+      vadjust = 0
+    )
+  ) %>%
+  visEdges(
+    color = list(color = "#666666", highlight = "#000000"),
+    arrows = list(to = list(enabled = TRUE, scaleFactor = 0.7)),
+    smooth = list(type = "curvedCW", roundness = 0.2)
+  ) %>%
+  visOptions(
+    highlightNearest = list(enabled = FALSE),
+    nodesIdSelection = TRUE
+  ) %>%
+  visEvents(
+    selectNode = "
+      function(event) {
+        var selected = event.nodes[0];
+        if (selected === undefined) return;
+
+        var connected = network.getConnectedNodes(selected);
+        var alwaysVisible = ['Antibiotics', 'Asthma', 'FEV1'];
+        var visible = {};
+        [selected].concat(connected).concat(alwaysVisible)
+          .forEach(function(id) { visible[id] = true; });
+
+        var nodeUpdates = network.body.data.nodes.get().map(function(n) {
+          return { id: n.id, opacity: visible[n.id] ? 1.0 : 0.15 };
+        });
+        network.body.data.nodes.update(nodeUpdates);
+
+        var edgeUpdates = network.body.data.edges.get().map(function(e) {
+          var both = visible[e.from] && visible[e.to];
+          return { id: e.id, opacity: both ? 1.0 : 0.06 };
+        });
+        network.body.data.edges.update(edgeUpdates);
+      }
+    ",
+    deselectNode = "
+      function(event) {
+        var nodeUpdates = network.body.data.nodes.get().map(function(n) {
+          return { id: n.id, opacity: 1.0 };
+        });
+        network.body.data.nodes.update(nodeUpdates);
+
+        var edgeUpdates = network.body.data.edges.get().map(function(e) {
+          return { id: e.id, opacity: 1.0 };
+        });
+        network.body.data.edges.update(edgeUpdates);
+      }
+    "
+  ) %>%
+  visInteraction(navigationButtons = TRUE, keyboard = TRUE) %>%
+  visPhysics(enabled = FALSE)
+```
+

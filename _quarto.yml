@@ -20,6 +20,9 @@ website:
         contents: 
         - pages/correlation.qmd
         - pages/deriv-matrix-qr-equiv.qmd
+      - section: "Другое"
+        contents:
+        - pages/thirdvars.qmd
 
 format:
   html:
