@@ -3,8 +3,10 @@ title: "Корреляция"
 ---
 
 \newcommand{\cor}{\text{cor}}
+\newcommand{\v}{\mathbf}
 
-## Распределение оценок коэффициента корреляции Пирсона
+
+## Корреляция Пирсона
 
 $$
 \cor(X,Y) = \dfrac{
@@ -15,6 +17,50 @@ $$
 \sqrt{\sum_{i=1}^n (y_i - \overline y)}
 }
 $$
+
+### Линал и корреляция Пирсона
+
+$$
+\v x = \pmatrix{x_1 \\ x_2 \\ \vdots \\ x_n}, 
+\quad \tilde{\v x} = \v x - \overline x = \pmatrix{\tilde x_1 \\ \tilde x_2 \\ \vdots \\ \tilde x_n}
+$$
+
+$$
+\v y = \pmatrix{y_1 \\ y_2 \\ \vdots \\ y_n}, 
+\quad \tilde{\v y} = \v y - \overline y = \pmatrix{\tilde y_1 \\ \tilde y_2 \\ \vdots \\ \tilde y_n}
+$$
+
+$$
+\theta (\v x, \v y) = \arccos \left( \frac{\v x \cdot \v y}{ \| \v x \| \cdot \| \v y \| } \right)
+$$
+
+$$
+\begin{split}
+\cor(X,Y) &= \dfrac{
+\sum_{i=1}^n (x_i - \overline x)(y_i - \overline y)
+}{
+\sqrt{\sum_{i=1}^n (x_i - \overline x)}
+\cdot
+\sqrt{\sum_{i=1}^n (y_i - \overline y)}
+} = \\
+&= \dfrac{
+\sum_{i=1}^n \tilde x_i \cdot \tilde y_i
+}{
+\sqrt{\sum_{i=1}^n \tilde x_i}
+\cdot
+\sqrt{\sum_{i=1}^n \tilde y_i}
+} = \\
+&= \frac{
+\tilde{\v x} \cdot \tilde{\v y}
+}{
+\| \tilde{\v x} \| \cdot \| \tilde{\v y} \|
+} = \cos \, \theta (\tilde{\v x}, \tilde{\v y})
+\end{split}
+$$
+
+
+
+## Распределение оценок коэффициента корреляции Пирсона
 
 
 ```{r}

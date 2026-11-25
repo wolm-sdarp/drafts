@@ -1,12 +1,21 @@
 ---
 title: "Векторы"
+code-fold: true
+code-summary: "Code"
+execute: 
+  warning: false
 ---
 
 ```{r}
+library(plotly)
 library(tidyverse)
 theme_set(theme_bw())
 theme_update(legend.position = "bottom")
 ```
+
+
+
+## Стандартизация: 2D
 
 ```{r}
 tibble(
@@ -33,6 +42,11 @@ tibble(
   pivot_longer(cols = -coord) %>% 
   pivot_wider(names_from = "coord", values_from = "value") %>% 
   separate(name, into = c("vec", "transform"), sep = "_") %>% 
+  mutate(transform = transform %>% 
+           factor(
+             levels = c("orig", "centered", "scaled", "stand"), 
+             labels = c("Исходные вектора", "Центрирование", "Нормирование", "Стандартизация"),
+             ordered = TRUE)) %>% 
   ggplot(aes(color = vec)) +
   geom_point(aes(x = s1, y = s2)) +
   geom_segment(aes(x = 0, y = 0, xend = s1, yend = s2),
@@ -47,6 +61,152 @@ tibble(
     ylim = c(-3, 3)
   )
 ```
+
+
+## Стандартизация: 3D
+
+```{r}
+#| fig-height: 10
+
+## 1. Данные: 4 вектора в пространстве 3 наблюдений -------------------------
+vecs <- tibble(
+  coord   = c("s1", "s2", "s3"),
+  a1_orig = c( 2.0,  3.0,  0.0),
+  a2_orig = c(-0.5, -0.3,  1.5),
+  a3_orig = c( 1.5,  0.0, -1.0),
+  a4_orig = c( 0.0, -2.0,  0.5)
+)
+
+## 2. Преобразования (scale работает по столбцам = по векторам) -------------
+dat <- vecs %>%
+  mutate(across(
+    ends_with("_orig"),
+    list(
+      centered = ~ as.numeric(scale(.x, center = TRUE,  scale = FALSE)),
+      scaled   = ~ as.numeric(scale(.x, center = FALSE, scale = TRUE)),
+      stand    = ~ as.numeric(scale(.x, center = TRUE,  scale = TRUE))
+    ),
+    .names = "{str_remove(.col, '_orig')}_{.fn}"
+  )) %>%
+  pivot_longer(-coord) %>%
+  pivot_wider(names_from = coord, values_from = value) %>%
+  separate(name, into = c("vec", "transform"), sep = "_") %>%
+  mutate(transform = factor(
+    transform,
+    levels = c("orig", "centered", "scaled", "stand"),
+    labels = c("Исходные векторы", "Центрирование", "Нормирование", "Стандартизация"),
+    ordered = TRUE
+  ))
+
+## 3. Оформление сцены ------------------------------------------------------
+pal <- c(a1 = "#E4572E", a2 = "#2E86AB", a3 = "#17A398", a4 = "#8E44AD")
+
+axis3d <- function(ttl) list(
+  title = list(text = ttl), range = c(-3, 3), dtick = 1,
+  zeroline = TRUE, zerolinecolor = "#9E9E9E", zerolinewidth = 6,
+  gridcolor = "#E0E0E0", backgroundcolor = "#FAFAFA", showbackground = TRUE
+)
+
+scene3d <- list(
+  xaxis = axis3d("s1"), yaxis = axis3d("s2"), zaxis = axis3d("s3"),
+  aspectmode = "cube",                                  # аналог coord_fixed()
+  camera = list(eye = list(x = 1.6, y = -1.8, z = 1.2))
+)
+
+## 4. Панель = набор traces, привязанных к своей сцене ----------------------
+add_panel <- function(p, lvl, sid, show_legend = FALSE, show_plane = FALSE) {
+  d <- filter(dat, transform == lvl)
+
+  if (show_plane) {
+    e1 <- c(1, -1, 0)/sqrt(2); e2 <- c(1, 1, -2)/sqrt(6)
+    R  <- 2.6                       # чтобы квадрат вписался в куб [-3, 3]
+    crn <- rbind(-R*e1 - R*e2, R*e1 - R*e2, R*e1 + R*e2, -R*e1 + R*e2)
+
+    p <- p %>%
+      add_trace(type = "mesh3d", scene = sid,
+                x = crn[, 1], y = crn[, 2], z = crn[, 3],
+                i = c(0, 0), j = c(1, 2), k = c(2, 3),
+                color = "#9E9E9E", opacity = 0.15,
+                hoverinfo = "skip", showlegend = FALSE) %>%
+      add_trace(type = "scatter3d", mode = "lines", scene = sid,
+                x = c(-2.6, 2.6), y = c(-2.6, 2.6), z = c(-2.6, 2.6),
+                line = list(color = "#9E9E9E", width = 5, dash = "dash"),
+                hoverinfo = "skip", showlegend = FALSE)
+  }
+
+  for (k in seq_len(nrow(d))) {
+    v   <- d[k, ]
+    clr <- unname(pal[v$vec])
+
+    p <- p %>%
+      add_trace(type = "scatter3d", mode = "lines+markers", scene = sid,
+                x = c(0, v$s1), y = c(0, v$s2), z = c(0, v$s3),
+                line = list(color = clr, width = 8),
+                marker = list(size = c(1.5, 3.5), color = clr),
+                name = v$vec, legendgroup = v$vec, showlegend = show_legend,
+                hovertemplate = paste0(v$vec,
+                  " (%{x:.2f}, %{y:.2f}, %{z:.2f})<extra></extra>")) %>%
+      add_trace(type = "cone", scene = sid,
+                x = v$s1, y = v$s2, z = v$s3,
+                u = v$s1, v = v$s2, w = v$s3,
+                anchor = "tip", sizemode = "absolute", sizeref = 0.4,
+                colorscale = list(c(0, clr), c(1, clr)), showscale = FALSE,
+                legendgroup = v$vec, showlegend = FALSE, hoverinfo = "skip")
+  }
+  p
+}
+
+## 5. Сборка: четыре сцены со своими domain ---------------------------------
+lvls    <- levels(dat$transform)
+show_pl <- lvls %in% c("Центрирование", "Стандартизация")
+sid     <- c("scene", paste0("scene", 2:4))
+
+n_col <- 2; n_row <- 2; m <- 0.06
+w <- (1 - (n_col - 1) * m) / n_col
+h <- (1 - (n_row - 1) * m) / n_row
+
+dom <- map(seq_along(lvls), function(i) {
+  cx <- (i - 1) %%  n_col
+  ry <- (i - 1) %/% n_col
+  list(x = c(cx * (w + m), cx * (w + m) + w),
+       y = c(1 - ry * (h + m) - h, 1 - ry * (h + m)))
+})
+
+scenes <- map(dom, ~ modifyList(scene3d, list(domain = .x))) %>% setNames(sid)
+
+fig <- plot_ly()
+for (i in seq_along(lvls)) {
+  fig <- add_panel(fig, lvls[i], sid[i],
+                   show_legend = i == 1, show_plane = show_pl[i])
+}
+
+ann <- map(seq_along(lvls), ~ list(
+  text = paste0("<b>", lvls[.x], "</b>"),
+  x = dom[[.x]]$x[1] + w / 2, y = dom[[.x]]$y[2],
+  xref = "paper", yref = "paper",
+  xanchor = "center", yanchor = "bottom",
+  showarrow = FALSE, font = list(size = 14)
+))
+
+fig <- do.call(layout, c(list(fig), scenes))   # layout(scene = ..., scene2 = ...)
+
+fig %>% layout(
+  annotations = ann,
+  legend = list(orientation = "h", x = 0.5, xanchor = "center",
+                y = -0.03, yanchor = "top"),
+  margin = list(t = 50, b = 50, l = 10, r = 10),
+  height = 800
+)
+```
+
+
+
+
+
+
+
+
+
 
 
 

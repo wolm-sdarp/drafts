@@ -20,6 +20,7 @@ website:
         contents: 
         - pages/correlation.qmd
         - pages/deriv-matrix-qr-equiv.qmd
+        - pages/one-way-anova.qmd
       - section: "Другое"
         contents:
         - pages/thirdvars.qmd
